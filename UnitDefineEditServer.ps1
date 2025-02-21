@@ -98,9 +98,26 @@ while ($listener.IsListening) {
         $response.StatusCode = 200
         $response.Close()
 
-        # $rootUnitをJSON形式で$filePath2に書き出す
-        $jsonContent = $rootUnit | ConvertTo-Json -Depth 10
-        Set-Content -Path $filePath2 -Value $jsonContent -Encoding UTF8
+        # $rootUnitのNestedUnitsを再帰的に辿りながら、NameとCommentをフォーマットして$filePath2に逐次書き出す
+        function Write-UnitToFile {
+            param (
+                [hashtable]$unit,
+                [int]$depth,
+                [System.IO.StreamWriter]$writer
+            )
+
+            $writer.WriteLine("`t" * $depth + "unit=$($unit.Name),;")
+            $writer.WriteLine("`t" * $depth + "{")
+            $writer.WriteLine("`t" * ($depth + 1) + "cm=`"$($unit.Comment)`";")
+            foreach ($nestedUnit in $unit.NestedUnits) {
+                Write-UnitToFile -unit $nestedUnit -depth ($depth + 1) -writer $writer
+            }
+            $writer.WriteLine("`t" * $depth + "}")
+        }
+
+        $writer = [System.IO.StreamWriter]::new($filePath2, $false, [System.Text.Encoding]::GetEncoding("Shift_JIS"))
+        Write-UnitToFile -unit $rootUnit.NestedUnits[0] -depth 0 -writer $writer
+        $writer.Close()
     }
 }
 $listener.Stop()
