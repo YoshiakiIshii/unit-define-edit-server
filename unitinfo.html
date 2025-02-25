@@ -1,0 +1,33 @@
+<html>
+<style>
+    ul {
+        list-style-type: none;
+        padding-left: 1em;
+    }
+</style>
+
+<body>
+    <input type='button' value='Save' onclick='sendPostRequest()'>
+    <input type='button' value='Stop Server' onclick='sendEndRequest()'>
+    <script>
+        function sendRequest(url, method, successMessage, failureMessage) {
+            fetch(url, { method: method }).then(response => {
+                    if (response.ok) alert(successMessage);
+                    else alert(failureMessage);
+                }).catch(error => {
+                    alert(failureMessage);
+                });
+        }
+        function sendPostRequest() {
+            sendRequest(window.location.pathname, 'POST', 'Save successful', 'Save failed');
+        }
+        function sendEndRequest() {
+            sendRequest('/end', 'GET', 'Server will stop', 'Failed to stop server');
+        }
+    </script>
+    <ul>
+        ${htmlContent}
+    </ul>
+</body>
+
+</html>
