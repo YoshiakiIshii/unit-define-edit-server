@@ -26,6 +26,9 @@ function Send-Response {
         [System.Net.HttpListenerResponse]$response
     )
 
+    $response.ContentType = 'text/html; charset=Shift_JIS'
+    $response.StatusCode = 200
+
     $targetHtmlPath = Join-Path -Path $PSScriptRoot -ChildPath $filename
     $targetHtmlContent = Get-Content -Path $targetHtmlPath
     $targetHtmlContent = $targetHtmlContent -replace '\$\{htmlContent\}', $htmlContent
@@ -72,8 +75,6 @@ while ($listener.IsListening) {
             $response.Close()
             continue
         }
-        $response.ContentType = 'text/html; charset=Shift_JIS'
-        $response.StatusCode = 200
 
         # SJISで作成された1つ目のファイルを1行ずつ読み込み、入れ子構造のユニット情報を取得する
         # - "unit="で始まる行は、次行から始まる{ ... }セクションのサマリであり、カンマ区切りである右辺の1項目目がユニット名
@@ -84,7 +85,9 @@ while ($listener.IsListening) {
         # - { ... }セクション内はタブでインデントされ、ネスト数分のタブが先頭に付加される
         $rootUnit = @{
             Name = 'Root'
+            UnitDef = $null
             Comment = $null
+            Parameters = $null
             NestedUnits = @()
             ParentUnit = $null
         }
@@ -95,15 +98,21 @@ while ($listener.IsListening) {
                 $parentUnit = $currentUnit
                 $currentUnit = @{
                     Name = ($_ -split ',')[0] -replace '^\t*unit='
+                    UnitDef = $_ -replace '^\t*'
                     Comment = $null
+                    Parameters = @()
                     NestedUnits = @()
                     ParentUnit = $parentUnit
                 }
+            } elseif ($_ -match '^\t*\{') {
             } elseif ($_ -match '^\t*\}') {
                 $currentUnit.ParentUnit.NestedUnits += $currentUnit
                 $currentUnit = $currentUnit.ParentUnit
             } elseif ($_ -match '^\t*cm=') {
                 $currentUnit.Comment = ($_ -replace '^\t*cm=' -replace '"|;', '').Trim()
+                $currentUnit.Parameters += $_ -replace '^\t*'
+            } else {
+                $currentUnit.Parameters += $_ -replace '^\t*'
             }
         }
 
@@ -158,9 +167,11 @@ while ($listener.IsListening) {
                 [System.IO.StreamWriter]$writer
             )
 
-            $writer.WriteLine("`t" * $depth + "unit=$($unit.Name),;")
+            $writer.WriteLine("`t" * $depth + "$($unit.UnitDef)")
             $writer.WriteLine("`t" * $depth + "{")
-            $writer.WriteLine("`t" * ($depth + 1) + "cm=`"$($unit.Comment)`";")
+            foreach ($parameter in $unit.Parameters) {
+                $writer.WriteLine("`t" * ($depth + 1) + "$parameter")
+            }
             foreach ($nestedUnit in $unit.NestedUnits) {
                 Write-UnitToFile -unit $nestedUnit -depth ($depth + 1) -writer $writer
             }
