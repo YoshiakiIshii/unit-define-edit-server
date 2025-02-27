@@ -7,22 +7,26 @@
 </style>
 
 <body>
-    <input type='button' value='Save' onclick='sendPostRequest()'>
-    <input type='button' value='Stop Server' onclick='sendEndRequest()'>
+    <input type='button' value='分割' onclick='sendSplitRequest()'>
+    <input type='button' value='マージ' onclick='sendMergeRequest()'>
+    <input type='button' value='サーバ停止' onclick='sendEndRequest()'>
     <script>
         function sendRequest(url, method, successMessage, failureMessage) {
             fetch(url, { method: method }).then(response => {
-                    if (response.ok) alert(successMessage);
-                    else alert(failureMessage);
-                }).catch(error => {
-                    alert(failureMessage);
-                });
+                if (response.ok) alert(successMessage);
+                else alert(failureMessage);
+            }).catch(error => {
+                alert(failureMessage);
+            });
         }
-        function sendPostRequest() {
-            sendRequest(window.location.pathname, 'POST', 'Save successful', 'Save failed');
+        function sendSplitRequest() {
+            sendRequest(`${window.location.pathname}?action=split`, 'POST', 'ユニット定義の分割が成功しました', 'ユニット定義の分割に失敗しました');
+        }
+        function sendMergeRequest() {
+            sendRequest(`${window.location.pathname}?action=merge`, 'POST', 'ユニット定義のマージが成功しました', 'ユニット定義のマージに失敗しました');
         }
         function sendEndRequest() {
-            sendRequest('/end', 'GET', 'Server will stop', 'Failed to stop server');
+            sendRequest('/end', 'GET', 'サーバを停止しました', 'サーバ停止が失敗しました');
         }
     </script>
     <ul>

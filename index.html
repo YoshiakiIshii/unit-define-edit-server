@@ -7,14 +7,14 @@
 </style>
 
 <body>
-    <input type='button' value='Stop Server' onclick='sendEndRequest()'>
+    <input type='button' value='サーバ停止' onclick='sendEndRequest()'>
     <script>
         function sendEndRequest() {
             fetch('/end', { method: 'GET' }).then(response => {
-                if (response.ok) alert('Server will stop');
-                else alert('Failed to stop server');
+                if (response.ok) alert('サーバを停止しました');
+                else alert('サーバ停止が失敗しました');
             }).catch(error => {
-                alert('Failed to stop server');
+                alert('サーバ停止が失敗しました');
             });
         }
     </script>
