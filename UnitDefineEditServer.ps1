@@ -8,6 +8,7 @@ param (
 #  - 例 unit=GA,,jp1usr01,;
 # - { ... }セクション内の"cm="で始まる行がユニットのコメント
 #  - 例 	cm="固定資産税（土地・家屋）";
+# - { ... }セクション内の"ty="で始まる行がユニット種別定義
 # - { ... }セクション内に"unit="で始まる行がある場合、次行からネストされた{ ... }セクションが始まる
 # - { ... }セクション内はタブでインデントされ、ネスト数分のタブが先頭に付加される
 function Read-UnitFromFile {
@@ -25,6 +26,7 @@ function Read-UnitFromFile {
                 Name        = ($_ -split ',')[0] -replace '^\t*unit='
                 UnitDef     = $_ -replace '^\t*'
                 Comment     = $null
+                UnitType = $null
                 Parameters  = @()
                 NestedUnits = @()
                 ParentUnit  = $parentUnit
@@ -37,7 +39,11 @@ function Read-UnitFromFile {
             $currentUnit = $currentUnit.ParentUnit
         }
         elseif ($_ -match '^\t*cm=') {
-            $currentUnit.Comment = ($_ -replace '^\t*cm=' -replace '"|;', '').Trim()
+            $currentUnit.Comment = ($_ -replace '^\t*cm=' -replace '"|;').Trim()
+            $currentUnit.Parameters += $_ -replace '^\t*'
+        }
+        elseif ($_ -match '^\t*ty=') {
+            $currentUnit.UnitType = ($_ -replace '^\t*ty=' -replace ';').Trim()
             $currentUnit.Parameters += $_ -replace '^\t*'
         }
         else {
@@ -114,14 +120,14 @@ while ($listener.IsListening) {
             # ディレクトリの再帰的な下位にajsファイルが1つも存在しない場合は、空の文字列を返す
             if ((Get-ChildItem -Path $directoryPath -Recurse -Filter "*.ajs").Count -eq 0) { return "" }
 
-            $html = "<li><details><summary>$(Split-Path -Leaf $directoryPath)</summary><ul>`n"
+            $html = "<li class='folder'><details><summary>$(Split-Path -Leaf $directoryPath)</summary><ul>`n"
             Get-ChildItem -Path $directoryPath | ForEach-Object {
                 if ($_.PSIsContainer) {
                     $html += Convert-DirectoryToHtml -directoryPath $_.FullName
                 }
                 elseif ($_.Extension -eq ".ajs") {
                     $relativePath = $_.FullName.Substring($documentRootDirectoryPath.Length).Replace('\', '/')
-                    $html += "<li><a href='$relativePath'>$($_.Name)</a></li>`n"
+                    $html += "<li class='file'><a href='$relativePath'>$($_.Name)</a></li>`n"
                 }
             }
             $html += "</ul></details></li>`n"
@@ -147,8 +153,8 @@ while ($listener.IsListening) {
             param (
                 [hashtable]$unit
             )
-
-            $html = "<li><details open><summary>$($unit.Name):$($unit.Comment)</summary><ul>`n"
+            
+            $html = "<li><details open><summary class='$($unit.UnitType)'>$($unit.Name):$($unit.Comment)</summary><ul>`n"
             foreach ($nestedUnit in $unit.NestedUnits) {
                 $html += Convert-UnitToHtml -unit $nestedUnit
             }
