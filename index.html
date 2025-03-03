@@ -5,7 +5,11 @@
         padding-left: 1em;
     }
 
-    details > summary {
+    summary {
+        cursor: pointer;
+    }
+
+    details>summary {
         list-style-type: none;
         padding-left: 20px;
         line-height: 1.6em;
@@ -13,7 +17,7 @@
         background-size: 15px auto;
     }
 
-    details[open] > summary {
+    details[open]>summary {
         list-style-type: none;
         padding-left: 20px;
         line-height: 1.6em;
@@ -28,19 +32,27 @@
         background-size: 15px auto;
     }
 </style>
-
-<body>
-    <input type='button' value='サーバ停止' onclick='sendEndRequest()'>
-    <script>
-        function sendEndRequest() {
-            fetch('/end', { method: 'GET' }).then(response => {
-                if (response.ok) alert('サーバを停止しました');
-                else alert('サーバ停止が失敗しました');
-            }).catch(error => {
-                alert('サーバ停止が失敗しました');
-            });
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.body.inert = false;
+    });
+    document.addEventListener('click', function (event) {
+        if (event.target.tagName === 'A') {
+            document.body.inert = true;
         }
-    </script>
+    });
+    function sendEndRequest() {
+        fetch('/end', { method: 'GET' }).then(response => {
+            if (response.ok) alert('サーバを停止しました');
+            else alert('サーバ停止が失敗しました');
+        }).catch(error => {
+            alert('サーバ停止が失敗しました');
+        });
+    }
+</script>
+
+<body inert>
+    <input type='button' value='サーバ停止' onclick='sendEndRequest()'>
     <ul>
         ${htmlContent}
     </ul>
